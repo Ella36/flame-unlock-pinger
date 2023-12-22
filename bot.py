@@ -13,6 +13,8 @@ import platform
 import random
 import sys
 
+import requests
+from requests.auth import HTTPBasicAuth
 import aiosqlite
 import discord
 from discord.ext import commands, tasks
@@ -20,6 +22,14 @@ from discord.ext.commands import Context
 from dotenv import load_dotenv
 
 from database import DatabaseManager
+
+CHANNEL_ID_BOT_STATUS = 1187859524376342598
+CHANNEL_ID_BOT_PING_ME = 1187859369493266432
+SERVER_ID = 1187848575435157685
+
+import time
+count = 0
+START_TIME = time.time()  # Record the start time
 
 if not os.path.isfile(f"{os.path.realpath(os.path.dirname(__file__))}/config.json"):
     sys.exit("'config.json' not found! Please add it and try again.")
@@ -140,6 +150,7 @@ class DiscordBot(commands.Bot):
         self.logger = logger
         self.config = config
         self.database = None
+        self.token = None
 
     async def init_db(self) -> None:
         async with aiosqlite.connect(
@@ -166,6 +177,86 @@ class DiscordBot(commands.Bot):
                     self.logger.error(
                         f"Failed to load extension {extension}\n{exception}"
                     )
+
+    # this should be moved to a /cog folder
+    @tasks.loop(seconds=5)
+    async def check_status_living_flame_task(self) -> None:
+
+        CLIENT_ID = os.getenv("CLIENT_ID")
+        CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+
+        # Get Access Token
+        # TODO: Expires after 24hrs
+        if self.token is None:
+            try:
+                response = requests.post(
+                    "https://eu.battle.net/oauth/token",
+                    auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET),
+                    data={"grant_type": "client_credentials"}
+                )
+
+                # Check if the request was successful (status code 200)
+                if response.status_code == 200:
+                    self.token = response.json().get("access_token")
+                    self.logger.info(f"Loaded access token")
+                else:
+                    self.logger.error(f"Error getting access token: {response.status_code} - {response.text}")
+                    return
+            except requests.ConnectionError as e:
+                self.logger.error(f"Connection error: {e}")
+                return
+
+        # Get population type
+        try:
+            # 5827 Living Flame; 5828 Crusader Strike
+            #response = requests.get("https://eu.api.blizzard.com/data/wow/connected-realm/5828",
+            response = requests.get("https://eu.api.blizzard.com/data/wow/connected-realm/5827",
+                params={"access_token": self.token,
+                        "namespace": "dynamic-classic1x-eu",
+                        "locale": "en_GB",
+                        "region": "eu"
+                })
+            if response.status_code == 200:
+                response = response.json()
+            else:
+                self.logger.error(f"Error: {response.status_code} - {response.text}")
+                return
+        except requests.ConnectionError as e:
+            self.logger.error(f"Connection error: {e}")
+            return
+
+        # Parse result
+        try:
+            type = response['population']['type']
+        except (TypeError, KeyError) as e:
+            self.logger.error(f"TypeError or KeyError: {e}\n:{type}")
+            return
+        # Queue response['has_queue'] True/False
+
+        # Update channel message
+        GUILD = bot.get_guild(SERVER_ID)
+        CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS)
+
+        global count
+        count = count + 1
+        elapsed_time = time.time() - START_TIME
+        formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+        message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+        if count%2  == 1: # Reduce spam by half
+            await CHANNEL_BOT_STATUS.purge(limit=2)
+            await CHANNEL_BOT_STATUS.send(message)
+
+        if type != "LOCKED":
+            CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
+            await CHANNEL_BOT_PING_ME.send(f"@everyone 🔥Living Flame🔥 Status: **{type}**")
+
+
+    @check_status_living_flame_task.before_loop
+    async def before_check_status_living_flame_task(self) -> None:
+        """
+        Before starting the task, we make sure the bot is ready
+        """
+        await self.wait_until_ready()
 
     @tasks.loop(minutes=1.0)
     async def status_task(self) -> None:
@@ -201,6 +292,7 @@ class DiscordBot(commands.Bot):
                 f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
             )
         )
+        self.check_status_living_flame_task.start()
 
     async def on_message(self, message: discord.Message) -> None:
         """
