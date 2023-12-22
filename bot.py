@@ -23,7 +23,9 @@ from dotenv import load_dotenv
 
 from database import DatabaseManager
 
-CHANNEL_ID_BOT_STATUS = 1187859524376342598
+CHANNEL_ID_BOT_STATUS_LOCAL = 1187859524376342598
+CHANNEL_ID_BOT_STATUS_HOSTED = 1187902358299091004
+
 CHANNEL_ID_BOT_PING_ME = 1187859369493266432
 SERVER_ID = 1187848575435157685
 
@@ -235,13 +237,19 @@ class DiscordBot(commands.Bot):
 
         # Update channel message
         GUILD = bot.get_guild(SERVER_ID)
-        CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS)
+
+        # Hosted and Local to different channels
+        ENV_LOCAL = os.getenv("LOCAL")
+        if ENV_LOCAL == "LOCAL":
+            CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_LOCAL)
+        else:
+            CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_HOSTED)
 
         global count
         count = count + 1
         elapsed_time = time.time() - START_TIME
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
-        message = (f"🔥Living Flame TEST🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+        message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
         if count%2  == 1: # Reduce spam by half
             await CHANNEL_BOT_STATUS.purge(limit=2)
             await CHANNEL_BOT_STATUS.send(message)
