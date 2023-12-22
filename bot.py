@@ -250,6 +250,10 @@ class DiscordBot(commands.Bot):
         elapsed_time = time.time() - START_TIME
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+
+        if count%100 == 1:
+            self.logger.info("Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+
         if count%2  == 1: # Reduce spam by half
             await CHANNEL_BOT_STATUS.purge(limit=2)
             await CHANNEL_BOT_STATUS.send(message)

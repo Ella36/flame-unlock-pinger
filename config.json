@@ -1,6 +1,4 @@
 {
   "prefix": "!",
   "invite_link": "https://discord.com/oauth2/authorize?&client_id=1187841106998722590&scope=bot+applications.commands&permissions=8"
-  // heroku bot #"invite_link": "https://discord.com/oauth2/authorize?&client_id=1187894766927626361&scope=bot+applications.commands&permissions=8"
-  
 }
