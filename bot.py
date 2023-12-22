@@ -179,7 +179,7 @@ class DiscordBot(commands.Bot):
                     )
 
     # this should be moved to a /cog folder
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=10)
     async def check_status_living_flame_task(self) -> None:
 
         CLIENT_ID = os.getenv("CLIENT_ID")
