@@ -213,8 +213,11 @@ class DiscordBot(commands.Bot):
         CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
         # Check if Access Token is about to expire
-        if self.expiry_timestamp is not None:
-            # Check if we're due for a refresh
+        global count
+        count = count + 1
+
+        # Check if we're due for a refresh
+        if self.expiry_timestamp is not None and (count%60 == 1):
             current_timestamp = int(datetime.utcnow().timestamp())
             # Set the threshold for refreshing (e.g., 1 hour before expiry)
             refresh_threshold_seconds = 1 * 60 * 60
@@ -284,8 +287,6 @@ class DiscordBot(commands.Bot):
         else:
             CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_HOSTED)
 
-        global count
-        count = count + 1
         elapsed_time = time.time() - START_TIME
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
