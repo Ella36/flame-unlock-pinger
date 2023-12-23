@@ -24,6 +24,29 @@ from dotenv import load_dotenv
 
 from database import DatabaseManager
 
+load_dotenv()
+
+# If LOCAL send desktop / play music
+show_notification = lambda *args: None
+play_sound = lambda *args: None
+if os.getenv("LOCAL") == "LOCAL":
+    import pygame # Play sound mp3
+    from plyer import notification # Send desktop notification
+    # Local sound
+    def play_sound():
+        pygame.mixer.init()
+        pygame.mixer.music.load("alert_sound_short.mp3")
+        pygame.mixer.music.play(loops=3)
+
+    # Local notification
+    def show_notification(title, message):
+        notification.notify(
+            title=title,
+            message=message,
+            app_icon=None,
+            timeout=10,  # seconds
+        )
+
 CHANNEL_ID_BOT_STATUS_LOCAL = 1187859524376342598
 CHANNEL_ID_BOT_STATUS_HOSTED = 1187902358299091004
 
@@ -228,7 +251,6 @@ class DiscordBot(commands.Bot):
         # Get population type
         try:
             # 5827 Living Flame; 5828 Crusader Strike
-            #response = requests.get("https://eu.api.blizzard.com/data/wow/connected-realm/5828",
             response = requests.get("https://eu.api.blizzard.com/data/wow/connected-realm/5827",
                 params={"access_token": self.token,
                         "namespace": "dynamic-classic1x-eu",
@@ -268,7 +290,7 @@ class DiscordBot(commands.Bot):
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
-        if count%100 == 1:
+        if count%90 == 1:
             self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
         #if count%2  == 1: # Reduce spam by half
@@ -278,6 +300,9 @@ class DiscordBot(commands.Bot):
         if type != "LOCKED":
             CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
             await CHANNEL_BOT_PING_ME.send(f"@everyone 🔥Living Flame🔥 Status: **{type}**")
+            if os.getenv("LOCAL") == "LOCAL":
+                play_sound()
+                show_notification("🔥Living Flame🔥", "Realm is not LOCKED!")
 
 
     @check_status_living_flame_task.before_loop
@@ -409,7 +434,6 @@ class DiscordBot(commands.Bot):
             raise error
 
 
-load_dotenv()
 
 bot = DiscordBot()
 bot.run(os.getenv("TOKEN"))
