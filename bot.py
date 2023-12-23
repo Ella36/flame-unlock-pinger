@@ -206,7 +206,7 @@ class DiscordBot(commands.Bot):
                     )
 
     # this should be moved to a /cog folder
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=5)
     async def check_status_living_flame_task(self) -> None:
 
         CLIENT_ID = os.getenv("CLIENT_ID")
@@ -290,7 +290,7 @@ class DiscordBot(commands.Bot):
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
-        if count%90 == 1:
+        if count%60 == 1:
             self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
         #if count%2  == 1: # Reduce spam by half
