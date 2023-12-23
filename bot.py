@@ -199,6 +199,7 @@ class DiscordBot(commands.Bot):
 
                 # Check if the request was successful (status code 200)
                 if response.status_code == 200:
+                    self.logger.info(response.json())
                     self.token = response.json().get("access_token")
                     self.logger.info(f"Loaded access token")
                 else:
@@ -252,7 +253,7 @@ class DiscordBot(commands.Bot):
         message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
         if count%100 == 1:
-            self.logger.info("Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+            self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
         if count%2  == 1: # Reduce spam by half
             await CHANNEL_BOT_STATUS.purge(limit=2)
