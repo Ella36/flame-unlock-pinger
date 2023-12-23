@@ -271,9 +271,9 @@ class DiscordBot(commands.Bot):
         if count%100 == 1:
             self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
-        if count%2  == 1: # Reduce spam by half
-            await CHANNEL_BOT_STATUS.purge(limit=2)
-            await CHANNEL_BOT_STATUS.send(message)
+        #if count%2  == 1: # Reduce spam by half
+        await CHANNEL_BOT_STATUS.purge(limit=2)
+        await CHANNEL_BOT_STATUS.send(message)
 
         if type != "LOCKED":
             CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
