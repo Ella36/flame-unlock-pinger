@@ -12,6 +12,7 @@ import os
 import platform
 import random
 import sys
+from datetime import datetime
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -153,6 +154,7 @@ class DiscordBot(commands.Bot):
         self.config = config
         self.database = None
         self.token = None
+        self.expiry_timestamp = None
 
     async def init_db(self) -> None:
         async with aiosqlite.connect(
@@ -187,8 +189,20 @@ class DiscordBot(commands.Bot):
         CLIENT_ID = os.getenv("CLIENT_ID")
         CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
+        # Check if Access Token is about to expire
+        if self.expiry_timestamp is not None:
+            # Check if we're due for a refresh
+            current_timestamp = int(datetime.utcnow().timestamp())
+            # Set the threshold for refreshing (e.g., 1 hour before expiry)
+            refresh_threshold_seconds = 1 * 60 * 60
+            # Calculate the difference between expiry and current timestamp
+            time_difference = self.expiry_timestamp - current_timestamp
+            # Check if the difference is less than the threshold
+            if time_difference < refresh_threshold_seconds:
+                self.logger.info("The token is about to expire. Refreshing now.")
+                self.token = None
+
         # Get Access Token
-        # TODO: Expires after 24hrs
         if self.token is None:
             try:
                 response = requests.post(
@@ -202,6 +216,8 @@ class DiscordBot(commands.Bot):
                     self.logger.info(response.json())
                     self.token = response.json().get("access_token")
                     self.logger.info(f"Loaded access token")
+                    current_timestamp = int(datetime.utcnow().timestamp())
+                    self.expiry_timestamp = current_timestamp + response.json().get("expires_in")
                 else:
                     self.logger.error(f"Error getting access token: {response.status_code} - {response.text}")
                     return
