@@ -22,7 +22,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context
 from dotenv import load_dotenv
 
-from database import DatabaseManager
+#from database import DatabaseManager
 
 load_dotenv()
 
@@ -49,6 +49,7 @@ if os.getenv("LOCAL") == "LOCAL":
 
 CHANNEL_ID_BOT_STATUS_LOCAL = 1187859524376342598
 CHANNEL_ID_BOT_STATUS_HOSTED = 1187902358299091004
+CHANNEL_ID_BOT_STATUS_HOSTED2 = 1188091059323019284
 
 CHANNEL_ID_BOT_PING_ME = 1187859369493266432
 SERVER_ID = 1187848575435157685
@@ -206,7 +207,7 @@ class DiscordBot(commands.Bot):
                     )
 
     # this should be moved to a /cog folder
-    @tasks.loop(seconds=5)
+    @tasks.loop(seconds=8)
     async def check_status_living_flame_task(self) -> None:
 
         CLIENT_ID = os.getenv("CLIENT_ID")
@@ -284,6 +285,8 @@ class DiscordBot(commands.Bot):
         ENV_LOCAL = os.getenv("LOCAL")
         if ENV_LOCAL == "LOCAL":
             CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_LOCAL)
+        elif ENV_LOCAL == "HOSTED2":
+            CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_HOSTED2)
         else:
             CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_HOSTED)
 
@@ -294,12 +297,12 @@ class DiscordBot(commands.Bot):
         if count%60 == 1:
             self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
 
-        #if count%2  == 1: # Reduce spam by half
-        try:
-            await CHANNEL_BOT_STATUS.purge()
-        except discord.errors.NotFound as e:
-            self.logger.error(f"Error NotFound: {e}")
-        await CHANNEL_BOT_STATUS.send(message)
+        if count%2  == 1: # Reduce spam by half
+            try:
+                await CHANNEL_BOT_STATUS.purge()
+            except discord.errors.NotFound as e:
+                self.logger.error(f"Error NotFound: {e}")
+            await CHANNEL_BOT_STATUS.send(message)
 
         if type != "LOCKED":
             CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
@@ -342,15 +345,15 @@ class DiscordBot(commands.Bot):
             f"Running on: {platform.system()} {platform.release()} ({os.name})"
         )
         self.logger.info("-------------------")
-        await self.init_db()
+        #await self.init_db()
         # No need to load cogs
         #await self.load_cogs()
         #self.status_task.start()
-        self.database = DatabaseManager(
-            connection=await aiosqlite.connect(
-                f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
-            )
-        )
+        #self.database = DatabaseManager(
+        #    connection=await aiosqlite.connect(
+        #        f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
+        #    )
+        #)
         self.check_status_living_flame_task.start()
 
     async def on_message(self, message: discord.Message) -> None:
