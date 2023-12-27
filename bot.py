@@ -207,7 +207,7 @@ class DiscordBot(commands.Bot):
                     )
 
     # this should be moved to a /cog folder
-    @tasks.loop(seconds=8)
+    @tasks.loop(seconds=10)
     async def check_status_living_flame_task(self) -> None:
 
         CLIENT_ID = os.getenv("CLIENT_ID")
@@ -304,7 +304,7 @@ class DiscordBot(commands.Bot):
                 self.logger.error(f"Error NotFound: {e}")
             await CHANNEL_BOT_STATUS.send(message)
 
-        if type != "LOCKED":
+        if type != "LOCKED" and type != "OFFLINE":
             CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
             await CHANNEL_BOT_PING_ME.send(f"@everyone 🔥Living Flame🔥 Status: **{type}**")
             if os.getenv("LOCAL") == "LOCAL":
