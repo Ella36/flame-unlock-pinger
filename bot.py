@@ -158,6 +158,13 @@ file_handler.setFormatter(file_handler_formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
+def format_elapsed_time(elapsed_time):
+    days, remainder = divmod(elapsed_time, 86400)  # 1 day = 24 * 60 * 60 seconds
+    hours, remainder = divmod(remainder, 3600)  # 1 hour = 60 * 60 seconds
+    minutes, seconds = divmod(remainder, 60)
+
+    return f"{int(days)} days, {int(hours)} hours, {int(minutes)} minutes, {int(seconds)} seconds"
+
 
 class DiscordBot(commands.Bot):
     def __init__(self) -> None:
@@ -290,19 +297,22 @@ class DiscordBot(commands.Bot):
         else:
             CHANNEL_BOT_STATUS = GUILD.get_channel(CHANNEL_ID_BOT_STATUS_HOSTED)
 
-        elapsed_time = time.time() - START_TIME
-        formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
-        message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+        elapsed_time_in_seconds = time.time() - START_TIME
+        formatted_time = format_elapsed_time(elapsed_time_in_seconds)
+        message = (f"🔥Living Flame🔥 Status: **{type}** elapsed_time: {formatted_time}; requests: {count:,}")
 
         if count%60 == 1:
-            self.logger.info(f"Living Flame Status: **{type}** elapsed_time: {formatted_time} requests: {count:,}")
+            self.logger.info(message)
 
-        if count%2  == 1: # Reduce spam by half
+        if count%6  == 1: # Reduce spam
             try:
-                await CHANNEL_BOT_STATUS.purge()
-            except discord.errors.NotFound as e:
-                self.logger.error(f"Error NotFound: {e}")
-            await CHANNEL_BOT_STATUS.send(message)
+                try:
+                    await CHANNEL_BOT_STATUS.purge()
+                except discord.errors.NotFound as e:
+                    self.logger.error(f"Error NotFound: {e}")
+                await CHANNEL_BOT_STATUS.send(message)
+            except discord.errors.HTTPException as e:
+                self.logger.error(f"Error HTTPException: {e}")
 
         if type != "LOCKED" and type != "OFFLINE":
             CHANNEL_BOT_PING_ME = GUILD.get_channel(CHANNEL_ID_BOT_PING_ME)
