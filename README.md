@@ -1,3 +1,8 @@
+# Discord Unlock pinger
+
+![screenshot status](./ss_status.png)
+![screenshot unlocked](./ss_unlocked.png)
+
 # Python Discord Bot Template
 
 <p align="center">
