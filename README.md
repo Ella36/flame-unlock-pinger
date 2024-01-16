@@ -1,4 +1,9 @@
-# Discord Unlock pinger
+# Server status monitor with alerts
+24/7 python discord bot
+
+Blizzard API to check server status
+
+pings discord when unlocked
 
 ![screenshot status](./ss_status.png)
 ![screenshot unlocked](./ss_unlocked.png)
